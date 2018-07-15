@@ -23,10 +23,6 @@
 #include "drv_uart.h"
 #include "drv_sdram.h"
 
-#ifdef RT_USING_COMPONENTS_INIT
-#include <components.h>
-#endif
-
 /**
  * This is the timer interrupt service routine.
  *
@@ -69,9 +65,12 @@ void rt_hw_board_init()
 
     /*init uart device*/
     rt_hw_uart_init();
+    
+#ifdef RT_USING_CONSOLE    
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
+#endif
 
-#if LPC_EXT_SDRAM == 1
+#ifdef BSP_DRV_SDRAM
     lpc_sdram_hw_init();
 #endif
 
@@ -81,7 +80,7 @@ void rt_hw_board_init()
 #endif
 }
 
-#ifdef RT_USING_RTGUI
+#ifdef PKG_USING_GUIENGINE
 #include <rtgui/driver.h>
 #include "drv_lcd.h"
 

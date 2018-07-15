@@ -18,7 +18,6 @@
 
 #include <rtgui/widgets/window.h>
 #include <rtgui/dc.h>
-#include <rtgui/dc_hw.h>
 
 #include "finsh.h"
 #include "rtgui_demo.h"
@@ -31,7 +30,7 @@
 #define DEBUG_PRINTF(...)   
 #endif
 
-#ifdef RT_USING_GUIENGINE
+#ifdef PKG_USING_GUIENGINE
 
 struct rtgui_win *main_win;
 rt_bool_t dc_event_handler(struct rtgui_object *object, rtgui_event_t *event);
@@ -109,7 +108,7 @@ rt_bool_t dc_event_handler(struct rtgui_object *object, rtgui_event_t *event)
         rtgui_dc_draw_text_stroke(dc, __TIME__, &rect, HIGH_LIGHT, BLACK);
         
         
-		rtgui_dc_end_drawing(dc);
+		rtgui_dc_end_drawing(dc, RT_TRUE);
     }
 	return RT_FALSE;
 }
@@ -126,4 +125,4 @@ int rt_gui_demo_init(void)
     
     return 0;
 }
-#endif /* RT_USING_GUIENGINE */
+#endif /* PKG_USING_GUIENGINE */

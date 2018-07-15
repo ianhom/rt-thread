@@ -1,7 +1,7 @@
 /*
  * File      : rtdef.h
  * This file is part of RT-Thread RTOS
- * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
+ * COPYRIGHT (C) 2006 - 2018, RT-Thread Development Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,12 @@
  * 2012-12-30     Bernard      add more control command for graphic.
  * 2013-01-09     Bernard      change version number.
  * 2015-02-01     Bernard      change version number to v2.1.0
+ * 2017-08-31     Bernard      change version number to v3.0.0
+ * 2017-11-30     Bernard      change version number to v3.0.1
+ * 2017-12-27     Bernard      change version number to v3.0.2
+ * 2018-02-24     Bernard      change version number to v3.0.3
+ * 2018-04-25     Bernard      change version number to v3.0.4
+ * 2018-05-31     Bernard      change version number to v3.1.0
  */
 
 #ifndef __RT_DEF_H__
@@ -50,7 +56,7 @@ extern "C" {
 
 /* RT-Thread version information */
 #define RT_VERSION                      3L              /**< major version number */
-#define RT_SUBVERSION                   0L              /**< minor version number */
+#define RT_SUBVERSION                   1L              /**< minor version number */
 #define RT_REVISION                     0L              /**< revise version number */
 
 /* RT-Thread version */
@@ -198,13 +204,14 @@ typedef int (*init_fn_t)(void);
 
 /* board init routines will be called in board_init() function */
 #define INIT_BOARD_EXPORT(fn)           INIT_EXPORT(fn, "1")
-/* device/component/fs/app init routines will be called in init_thread */
+
+/* pre/device/component/env/app init routines will be called in init_thread */
+/* components pre-initialization (pure software initilization) */
+#define INIT_PREV_EXPORT(fn)            INIT_EXPORT(fn, "2")
 /* device initialization */
-#define INIT_DEVICE_EXPORT(fn)          INIT_EXPORT(fn, "2")
+#define INIT_DEVICE_EXPORT(fn)          INIT_EXPORT(fn, "3")
 /* components initialization (dfs, lwip, ...) */
-#define INIT_COMPONENT_EXPORT(fn)       INIT_EXPORT(fn, "3")
-/* file system initialization (dfs-elm, dfs-rom, ...) */
-#define INIT_FS_EXPORT(fn)              INIT_EXPORT(fn, "4")
+#define INIT_COMPONENT_EXPORT(fn)       INIT_EXPORT(fn, "4")
 /* environment initialization (mount disk, ...) */
 #define INIT_ENV_EXPORT(fn)             INIT_EXPORT(fn, "5")
 /* appliation initialization (rtgui application etc ...) */
@@ -259,6 +266,8 @@ typedef int (*init_fn_t)(void);
 #define RT_ENOSYS                       6               /**< No system */
 #define RT_EBUSY                        7               /**< Busy */
 #define RT_EIO                          8               /**< IO error */
+#define RT_EINTR                        9               /**< Interrupted system call */
+#define RT_EINVAL                       10              /**< Invalid argument */
 
 /*@}*/
 
@@ -288,12 +297,24 @@ typedef int (*init_fn_t)(void);
  */
 #define RT_NULL                         (0)
 
+/**
+ * Double List structure
+ */
 struct rt_list_node
 {
     struct rt_list_node *next;                          /**< point to next node. */
     struct rt_list_node *prev;                          /**< point to prev node. */
 };
 typedef struct rt_list_node rt_list_t;                  /**< Type for lists. */
+
+/**
+ * Single List structure
+ */
+struct rt_slist_node
+{
+    struct rt_slist_node *next;                         /**< point to next node. */
+};
+typedef struct rt_slist_node rt_slist_t;                /**< Type for single list. */
 
 /**
  * @addtogroup KernelObject
@@ -342,34 +363,16 @@ typedef struct rt_object *rt_object_t;                  /**< Type for kernel obj
 enum rt_object_class_type
 {
     RT_Object_Class_Thread = 0,                         /**< The object is a thread. */
-#ifdef RT_USING_SEMAPHORE
     RT_Object_Class_Semaphore,                          /**< The object is a semaphore. */
-#endif
-#ifdef RT_USING_MUTEX
     RT_Object_Class_Mutex,                              /**< The object is a mutex. */
-#endif
-#ifdef RT_USING_EVENT
     RT_Object_Class_Event,                              /**< The object is a event. */
-#endif
-#ifdef RT_USING_MAILBOX
     RT_Object_Class_MailBox,                            /**< The object is a mail box. */
-#endif
-#ifdef RT_USING_MESSAGEQUEUE
     RT_Object_Class_MessageQueue,                       /**< The object is a message queue. */
-#endif
-#ifdef RT_USING_MEMHEAP
     RT_Object_Class_MemHeap,                            /**< The object is a memory heap */
-#endif
-#ifdef RT_USING_MEMPOOL
     RT_Object_Class_MemPool,                            /**< The object is a memory pool. */
-#endif
-#ifdef RT_USING_DEVICE
     RT_Object_Class_Device,                             /**< The object is a device */
-#endif
     RT_Object_Class_Timer,                              /**< The object is a timer. */
-#ifdef RT_USING_MODULE
     RT_Object_Class_Module,                             /**< The object is a module. */
-#endif
     RT_Object_Class_Unknown,                            /**< The object is unknown. */
     RT_Object_Class_Static = 0x80                       /**< The object is a static object. */
 };
@@ -447,6 +450,19 @@ typedef struct rt_timer *rt_timer_t;
 /*@}*/
 
 /**
+ * @addtogroup Signal
+ */
+#ifdef RT_USING_SIGNALS
+#include <libc/libc_signal.h>
+typedef unsigned long rt_sigset_t;
+typedef void (*rt_sighandler_t)(int signo);
+typedef siginfo_t rt_siginfo_t;
+
+#define RT_SIG_MAX          32
+#endif
+/*@}*/
+
+/**
  * @addtogroup Thread
  */
 
@@ -465,6 +481,12 @@ typedef struct rt_timer *rt_timer_t;
 #define RT_THREAD_RUNNING               0x03                /**< Running status */
 #define RT_THREAD_BLOCK                 RT_THREAD_SUSPEND   /**< Blocked status */
 #define RT_THREAD_CLOSE                 0x04                /**< Closed status */
+#define RT_THREAD_STAT_MASK             0x0f
+
+#define RT_THREAD_STAT_SIGNAL           0x10
+#define RT_THREAD_STAT_SIGNAL_READY     (RT_THREAD_STAT_SIGNAL | RT_THREAD_READY)
+#define RT_THREAD_STAT_SIGNAL_WAIT      0x20
+#define RT_THREAD_STAT_SIGNAL_MASK      0xf0
 
 /**
  * thread control command definitions
@@ -501,7 +523,7 @@ struct rt_thread
     /* error code */
     rt_err_t    error;                                  /**< error code */
 
-    rt_uint8_t  stat;                                   /**< thread stat */
+    rt_uint8_t  stat;                                   /**< thread status */
 
     /* priority */
     rt_uint8_t  current_priority;                       /**< current priority */
@@ -516,6 +538,15 @@ struct rt_thread
     /* thread event */
     rt_uint32_t event_set;
     rt_uint8_t  event_info;
+#endif
+
+#if defined(RT_USING_SIGNALS)
+    rt_sigset_t     sig_pending;                        /**< the pending signals */
+    rt_sigset_t     sig_mask;                           /**< the mask bits of signal */
+
+    void            *sig_ret;                           /**< the return stack pointer from signal */
+    rt_sighandler_t *sig_vectors;                       /**< vectors of signal handler */
+    void            *si_list;                           /**< the signal infor list */
 #endif
 
     rt_ubase_t  init_tick;                              /**< thread's initialized tick */
@@ -778,11 +809,6 @@ enum rt_device_class_type
 #define RT_DEVICE_FLAG_SUSPENDED        0x020           /**< device is suspended */
 #define RT_DEVICE_FLAG_STREAM           0x040           /**< stream mode */
 
-#define RT_DEVICE_CTRL_CONFIG           0x03            /* configure device */
-#define RT_DEVICE_CTRL_SET_INT          0x10            /* enable receive irq */
-#define RT_DEVICE_CTRL_CLR_INT          0x11            /* disable receive irq */
-#define RT_DEVICE_CTRL_GET_INT          0x12
-
 #define RT_DEVICE_FLAG_INT_RX           0x100           /**< INT mode on Rx */
 #define RT_DEVICE_FLAG_DMA_RX           0x200           /**< DMA mode on Rx */
 #define RT_DEVICE_FLAG_INT_TX           0x400           /**< INT mode on Tx */
@@ -793,12 +819,18 @@ enum rt_device_class_type
 #define RT_DEVICE_OFLAG_WRONLY          0x002           /**< write only access */
 #define RT_DEVICE_OFLAG_RDWR            0x003           /**< read and write */
 #define RT_DEVICE_OFLAG_OPEN            0x008           /**< device is opened */
+#define RT_DEVICE_OFLAG_MASK            0xf0f           /**< mask of open flag */
 
 /**
  * general device commands
  */
 #define RT_DEVICE_CTRL_RESUME           0x01            /**< resume device */
 #define RT_DEVICE_CTRL_SUSPEND          0x02            /**< suspend device */
+#define RT_DEVICE_CTRL_CONFIG           0x03            /**< configure device */
+
+#define RT_DEVICE_CTRL_SET_INT          0x10            /**< set interrupt */
+#define RT_DEVICE_CTRL_CLR_INT          0x11            /**< clear interrupt */
+#define RT_DEVICE_CTRL_GET_INT          0x12            /**< get interrupt status */
 
 /**
  * special device commands
@@ -817,6 +849,30 @@ enum rt_device_class_type
 
 typedef struct rt_device *rt_device_t;
 /**
+ * operations set for device object
+ */
+struct rt_device_ops
+{
+    /* common device interface */
+    rt_err_t  (*init)   (rt_device_t dev);
+    rt_err_t  (*open)   (rt_device_t dev, rt_uint16_t oflag);
+    rt_err_t  (*close)  (rt_device_t dev);
+    rt_size_t (*read)   (rt_device_t dev, rt_off_t pos, void *buffer, rt_size_t size);
+    rt_size_t (*write)  (rt_device_t dev, rt_off_t pos, const void *buffer, rt_size_t size);
+    rt_err_t  (*control)(rt_device_t dev, int cmd, void *args);
+};
+
+/**
+ * WaitQueue structure
+ */
+struct rt_wqueue
+{
+    rt_uint32_t flag;
+    rt_list_t waiting_list;
+};
+typedef struct rt_wqueue rt_wqueue_t;
+
+/**
  * Device structure
  */
 struct rt_device
@@ -834,13 +890,22 @@ struct rt_device
     rt_err_t (*rx_indicate)(rt_device_t dev, rt_size_t size);
     rt_err_t (*tx_complete)(rt_device_t dev, void *buffer);
 
+#ifdef RT_USING_DEVICE_OPS
+    const struct rt_device_ops *ops;
+#else
     /* common device interface */
     rt_err_t  (*init)   (rt_device_t dev);
     rt_err_t  (*open)   (rt_device_t dev, rt_uint16_t oflag);
     rt_err_t  (*close)  (rt_device_t dev);
     rt_size_t (*read)   (rt_device_t dev, rt_off_t pos, void *buffer, rt_size_t size);
     rt_size_t (*write)  (rt_device_t dev, rt_off_t pos, const void *buffer, rt_size_t size);
-    rt_err_t  (*control)(rt_device_t dev, rt_uint8_t cmd, void *args);
+    rt_err_t  (*control)(rt_device_t dev, int cmd, void *args);
+#endif
+
+#if defined(RT_USING_POSIX)
+    const struct dfs_file_ops *fops;
+    struct rt_wqueue wait_queue;
+#endif
 
     void                     *user_data;                /**< device private data */
 };
@@ -991,16 +1056,34 @@ struct rt_module
     rt_uint16_t                  nsym;                  /**< number of symbol in the module */
     struct rt_module_symtab     *symtab;                /**< module symbol table */
 
-    /* object in this module, module object is the last basic object type */
-    struct rt_object_information module_object[RT_Object_Class_Unknown];
+    rt_uint32_t                  user_data;             /**< arch data in the module */
+
+    void (*module_init)(void);
+    void (*module_cleanup)(void);
 };
 typedef struct rt_module *rt_module_t;
 
 /*@}*/
 #endif
 
+/* definitions for libc */
+#include "rtlibc.h"
+
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef __cplusplus
+/* RT-Thread definitions for C++ */
+namespace rtthread {
+
+enum TICK_WAIT {
+    WAIT_NONE = 0,
+    WAIT_FOREVER = -1,
+};
+
+}
+
+#endif /* end of __cplusplus */
 
 #endif

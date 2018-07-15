@@ -63,6 +63,7 @@
 
 #include "netif/etharp.h"
 #include "netif/ethernetif.h"
+#include "lwip/inet.h"
 
 #define netifapi_netif_set_link_up(n)      netifapi_netif_common(n, netif_set_link_up, NULL)
 #define netifapi_netif_set_link_down(n)    netifapi_netif_common(n, netif_set_link_down, NULL)
@@ -240,9 +241,9 @@ rt_err_t eth_device_init_with_flag(struct eth_device *dev, char *name, rt_uint16
         else
     #endif
         {
-            IP4_ADDR(&ipaddr, RT_LWIP_IPADDR0, RT_LWIP_IPADDR1, RT_LWIP_IPADDR2, RT_LWIP_IPADDR3);
-            IP4_ADDR(&gw, RT_LWIP_GWADDR0, RT_LWIP_GWADDR1, RT_LWIP_GWADDR2, RT_LWIP_GWADDR3);
-            IP4_ADDR(&netmask, RT_LWIP_MSKADDR0, RT_LWIP_MSKADDR1, RT_LWIP_MSKADDR2, RT_LWIP_MSKADDR3);
+            ipaddr.addr = inet_addr(RT_LWIP_IPADDR);
+            gw.addr = inet_addr(RT_LWIP_GWADDR);
+            netmask.addr = inet_addr(RT_LWIP_MSKADDR);
         }
 
         netifapi_netif_add(netif, &ipaddr, &netmask, &gw, dev, eth_netif_device_init, tcpip_input);
@@ -433,9 +434,9 @@ int eth_system_device_init(void)
     RT_ASSERT(result == RT_EOK);
 #endif
 
-	return (int)result;
+    return (int)result;
 }
-INIT_DEVICE_EXPORT(eth_system_device_init);
+INIT_PREV_EXPORT(eth_system_device_init);
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
@@ -616,5 +617,35 @@ void list_tcps(void)
 }
 FINSH_FUNCTION_EXPORT(list_tcps, list all of tcp connections);
 #endif
+
+#if LWIP_UDP
+#include "lwip/udp.h"
+void list_udps(void)
+{
+    struct udp_pcb *pcb;
+    rt_uint32_t num = 0;
+    char local_ip_str[16];
+    char remote_ip_str[16];
+
+    rt_enter_critical();
+    rt_kprintf("Active UDP PCB states:\n");
+    for (pcb = udp_pcbs; pcb != NULL; pcb = pcb->next)
+    {
+        strcpy(local_ip_str, ipaddr_ntoa(&(pcb->local_ip)));
+        strcpy(remote_ip_str, ipaddr_ntoa(&(pcb->remote_ip)));
+
+        rt_kprintf("#%d %d %s:%d <==> %s:%d \n",
+                   num, (int)pcb->flags,
+                   local_ip_str,
+                   pcb->local_port,
+                   remote_ip_str,
+                   pcb->remote_port);
+
+        num++;
+    }
+    rt_exit_critical();
+}
+FINSH_FUNCTION_EXPORT(list_udps, list all of udp connections);
+#endif /* LWIP_UDP */
 
 #endif

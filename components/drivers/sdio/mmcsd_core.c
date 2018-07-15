@@ -548,7 +548,7 @@ rt_uint32_t mmcsd_select_voltage(struct rt_mmcsd_host *host, rt_uint32_t ocr)
 
 static void mmcsd_power_up(struct rt_mmcsd_host *host)
 {
-    int bit = fls(host->valid_ocr) - 1;
+    int bit = __rt_fls(host->valid_ocr) - 1;
 
     host->io_cfg.vdd = bit;
     if (controller_is_spi(host))
@@ -655,6 +655,7 @@ void mmcsd_detect(void *param)
                     if (init_sd(host, ocr))
                         mmcsd_power_off(host);
                     mmcsd_host_unlock(host);
+                    rt_mb_send(&mmcsd_hotpluge_mb, (rt_uint32_t)host);
                     continue;
                 }
                 
@@ -726,7 +727,7 @@ void mmcsd_free_host(struct rt_mmcsd_host *host)
     rt_free(host);
 }
 
-void rt_mmcsd_core_init(void)
+int rt_mmcsd_core_init(void)
 {
     rt_err_t ret;
 
@@ -749,5 +750,8 @@ void rt_mmcsd_core_init(void)
     }
 
     rt_sdio_init();
+
+	return 0;
 }
+INIT_PREV_EXPORT(rt_mmcsd_core_init);
 

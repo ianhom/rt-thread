@@ -15,13 +15,13 @@
 
 #include <rthw.h>
 #include <rtthread.h>
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+#endif
 
 #include "board.h"
 #include "usart.h"
-/* RT_USING_COMPONENTS_INIT */
-#ifdef  RT_USING_COMPONENTS_INIT
-#include <components.h>
-#endif
+
 /**
  * @addtogroup STM32
  */
@@ -159,6 +159,6 @@ long cmd_reset(int argc, char** argv)
     HAL_NVIC_SystemReset();
     return 0;
 }
-FINSH_FUNCTION_EXPORT_ALIAS(cmd_reset, __cmd_reset, Reset Board.);
+FINSH_FUNCTION_EXPORT_ALIAS(cmd_reset, __cmd_reset, Reset Board);
 
 /*@}*/

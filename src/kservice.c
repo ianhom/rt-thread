@@ -46,7 +46,7 @@
 /**@{*/
 
 /* global errno in RT-Thread */
-static volatile int _errno;
+static volatile int __rt_errno;
 
 #if defined(RT_USING_DEVICE) && defined(RT_USING_CONSOLE)
 static rt_device_t _console_device = RT_NULL;
@@ -64,12 +64,12 @@ rt_err_t rt_get_errno(void)
     if (rt_interrupt_get_nest() != 0)
     {
         /* it's in interrupt context */
-        return _errno;
+        return __rt_errno;
     }
 
     tid = rt_thread_self();
     if (tid == RT_NULL)
-        return _errno;
+        return __rt_errno;
 
     return tid->error;
 }
@@ -87,7 +87,7 @@ void rt_set_errno(rt_err_t error)
     if (rt_interrupt_get_nest() != 0)
     {
         /* it's in interrupt context */
-        _errno = error;
+        __rt_errno = error;
 
         return;
     }
@@ -95,7 +95,7 @@ void rt_set_errno(rt_err_t error)
     tid = rt_thread_self();
     if (tid == RT_NULL)
     {
-        _errno = error;
+        __rt_errno = error;
 
         return;
     }
@@ -114,13 +114,13 @@ int *_rt_errno(void)
     rt_thread_t tid;
 
     if (rt_interrupt_get_nest() != 0)
-        return (int *)&_errno;
+        return (int *)&__rt_errno;
 
     tid = rt_thread_self();
     if (tid != RT_NULL)
         return (int *) & (tid->error);
 
-    return (int *)&_errno;
+    return (int *)&__rt_errno;
 }
 RTM_EXPORT(_rt_errno);
 
@@ -220,9 +220,18 @@ void *rt_memcpy(void *dst, const void *src, rt_ubase_t count)
 {
 #ifdef RT_USING_TINY_SIZE
     char *tmp = (char *)dst, *s = (char *)src;
+    rt_ubase_t len;
 
-    while (count--)
-        *tmp++ = *s++;
+    if (tmp <= s || tmp > (s + count))
+    {
+        while (count--)
+            *tmp ++ = *s ++;
+    }
+    else
+    {
+        for (len = count; len > 0; len --)
+            tmp[len - 1] = s[len - 1];
+    }
 
     return dst;
 #else
@@ -522,6 +531,9 @@ char *rt_strdup(const char *s)
     return tmp;
 }
 RTM_EXPORT(rt_strdup);
+#ifdef __CC_ARM
+char *strdup(const char *s) __attribute__((alias("rt_strdup")));
+#endif
 #endif
 
 /**
@@ -533,7 +545,7 @@ void rt_show_version(void)
     rt_kprintf("- RT -     Thread Operating System\n");
     rt_kprintf(" / | \\     %d.%d.%d build %s\n",
                RT_VERSION, RT_SUBVERSION, RT_REVISION, __DATE__);
-    rt_kprintf(" 2006 - 2017 Copyright by rt-thread team\n");
+    rt_kprintf(" 2006 - 2018 Copyright by rt-thread team\n");
 }
 RTM_EXPORT(rt_show_version);
 
@@ -1114,6 +1126,8 @@ RTM_EXPORT(rt_hw_console_output);
  */
 void rt_kputs(const char *str)
 {
+    if (!str) return;
+
 #ifdef RT_USING_DEVICE
     if (_console_device == RT_NULL)
     {
@@ -1265,7 +1279,7 @@ const rt_uint8_t __lowest_bit_bitmap[] =
  * @return return the index of the first bit set. If value is 0, then this function
  * shall return 0.
  */
-rt_ubase_t __rt_ffs(rt_ubase_t value)
+int __rt_ffs(int value)
 {
     if (value == 0) return 0;
 

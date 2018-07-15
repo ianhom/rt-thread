@@ -30,7 +30,6 @@
 #include "hal/am_hal_clkgen.h"
 #include "hal/am_hal_cachectrl.h"
 #include "uart.h"
-#include "led.h"
 
 #ifdef __CC_ARM
 extern int Image$$RW_IRAM1$$ZI$$Limit;
@@ -40,7 +39,7 @@ extern int Image$$RW_IRAM1$$ZI$$Limit;
 #define AM_SRAM_BEGIN    (__segment_end("HEAP"))
 #else
 extern int __bss_end;
-#define NRF_SRAM_BEGIN    (&__bss_end)
+#define AM_SRAM_BEGIN    (&__bss_end)
 #endif
 
 #define TICK_RATE_HZ  RT_TICK_PER_SECOND

@@ -11,6 +11,7 @@
  * Date           Author       Notes
  * 2012-12-8      Bernard      add file header
  *                             export bsd socket symbol for RT-Thread Application Module 
+ * 2017-11-15     Bernard      add lock for init_done callback.
  */
 
 #include <rtthread.h>
@@ -28,6 +29,7 @@
 #include "lwip/sio.h"
 #include "lwip/init.h"
 #include "lwip/dhcp.h"
+#include "lwip/inet.h"
 
 #include <string.h>
 
@@ -67,12 +69,10 @@ static void tcpip_init_done_callback(void *arg)
 {
     rt_device_t device;
     struct eth_device *ethif;
-    ip_addr_t ipaddr, netmask, gw;
+    ip4_addr_t ipaddr, netmask, gw;
     struct rt_list_node* node;
     struct rt_object* object;
     struct rt_object_information *information;
-
-    extern struct rt_object_information rt_object_container[];
 
     LWIP_ASSERT("invalid arg.\n",arg);
 
@@ -84,7 +84,8 @@ static void tcpip_init_done_callback(void *arg)
     rt_enter_critical();
 
     /* for each network interfaces */
-    information = &rt_object_container[RT_Object_Class_Device];
+    information = rt_object_get_information(RT_Object_Class_Device);
+    RT_ASSERT(information != RT_NULL);
     for (node = information->object_list.next;
          node != &(information->object_list);
          node = node->next)
@@ -97,6 +98,7 @@ static void tcpip_init_done_callback(void *arg)
 
             /* leave critical */
             rt_exit_critical();
+			LOCK_TCPIP_CORE();
 
             netif_add(ethif->netif, &ipaddr, &netmask, &gw,
                       ethif, netif_device_init, tcpip_input);
@@ -119,6 +121,7 @@ static void tcpip_init_done_callback(void *arg)
                 netif_set_link_up(ethif->netif);
             }
 
+			UNLOCK_TCPIP_CORE();
             /* enter critical */
             rt_enter_critical();
         }
@@ -132,10 +135,21 @@ static void tcpip_init_done_callback(void *arg)
 /**
  * LwIP system initialization
  */
+extern int eth_system_device_init_private(void);
+static volatile uint8_t init_ok = 0;
 int lwip_system_init(void)
 {
     rt_err_t rc;
     struct rt_semaphore done_sem;
+
+    if(init_ok)
+    {
+        rt_kprintf("lwip system already init.\n");
+        return 0;        
+    }
+    init_ok = 1;
+
+    eth_system_device_init_private();
 
     /* set default netif to NULL */
     netif_default = RT_NULL;
@@ -166,18 +180,18 @@ int lwip_system_init(void)
     {
         struct ip4_addr ipaddr, netmask, gw;
 
-        IP4_ADDR(&ipaddr, RT_LWIP_IPADDR0, RT_LWIP_IPADDR1, RT_LWIP_IPADDR2, RT_LWIP_IPADDR3);
-        IP4_ADDR(&gw, RT_LWIP_GWADDR0, RT_LWIP_GWADDR1, RT_LWIP_GWADDR2, RT_LWIP_GWADDR3);
-        IP4_ADDR(&netmask, RT_LWIP_MSKADDR0, RT_LWIP_MSKADDR1, RT_LWIP_MSKADDR2, RT_LWIP_MSKADDR3);
+        ipaddr.addr = inet_addr(RT_LWIP_IPADDR);
+        gw.addr = inet_addr(RT_LWIP_GWADDR);
+        netmask.addr = inet_addr(RT_LWIP_MSKADDR);
 
         netifapi_netif_set_addr(netif_default, &ipaddr, &netmask, &gw);
     }
 #endif
-	rt_kprintf("lwIP-%d.%d.%d initialized!\n", LWIP_VERSION_MAJOR, LWIP_VERSION_MINOR, LWIP_VERSION_REVISION);
+    rt_kprintf("lwIP-%d.%d.%d initialized!\n", LWIP_VERSION_MAJOR, LWIP_VERSION_MINOR, LWIP_VERSION_REVISION);
 
-	return 0;
+    return 0;
 }
-INIT_COMPONENT_EXPORT(lwip_system_init);
+INIT_PREV_EXPORT(lwip_system_init);
 
 void sys_init(void)
 {

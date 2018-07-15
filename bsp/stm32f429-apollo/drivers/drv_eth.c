@@ -120,18 +120,11 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 
 static void phy_pin_reset(void)
 {
-	rt_base_t level;
-    
-    extern void delay_ms(rt_uint32_t nms);
-
-	level = rt_hw_interrupt_disable();
-    
 	rt_pcf8574_write_bit(ETH_RESET_IO, 1);
-	delay_ms(100);
-	rt_pcf8574_write_bit(ETH_RESET_IO, 0);
-	delay_ms(100);
+	rt_thread_delay(RT_TICK_PER_SECOND / 10);
     
-	rt_hw_interrupt_enable(level);
+	rt_pcf8574_write_bit(ETH_RESET_IO, 0);
+	rt_thread_delay(RT_TICK_PER_SECOND / 10);
 }
 #ifdef DEBUG
 FINSH_FUNCTION_EXPORT(phy_pin_reset, phy hardware reset);
@@ -218,7 +211,7 @@ static rt_size_t rt_stm32_eth_write (rt_device_t dev, rt_off_t pos, const void* 
 	return 0;
 }
 
-static rt_err_t rt_stm32_eth_control(rt_device_t dev, rt_uint8_t cmd, void *args)
+static rt_err_t rt_stm32_eth_control(rt_device_t dev, int cmd, void *args)
 {
     STM32_ETH_PRINTF("rt_stm32_eth_control...\n");
 	switch(cmd)
@@ -591,6 +584,9 @@ static int rt_hw_stm32_eth_init(void)
     {
         STM32_ETH_PRINTF("eth_device_init faild: %d\r\n", state);
     }
+	
+	eth_device_linkchange(&stm32_eth_device.parent, RT_TRUE);   //linkup the e0 for lwip to check
+	
     return state;
 }
-INIT_DEVICE_EXPORT(rt_hw_stm32_eth_init);
+INIT_APP_EXPORT(rt_hw_stm32_eth_init);

@@ -214,6 +214,9 @@ void rt_application_init(void)
     result = rt_thread_init(tid, "main", main_thread_entry, RT_NULL,
                             main_stack, sizeof(main_stack), RT_THREAD_PRIORITY_MAX / 3, 20);
     RT_ASSERT(result == RT_EOK);
+	
+    /* if not define RT_USING_HEAP, using to eliminate the warning */
+    (void)result;
 #endif
 
     rt_thread_startup(tid);
@@ -236,6 +239,11 @@ int rtthread_startup(void)
 
     /* scheduler system initialization */
     rt_system_scheduler_init();
+
+#ifdef RT_USING_SIGNALS
+    /* signal system initialization */
+    rt_system_signal_init();
+#endif
 
     /* create init_thread */
     rt_application_init();

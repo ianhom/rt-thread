@@ -18,7 +18,7 @@
 #include <board.h>
 #include <finsh.h>
 
-#ifdef RT_USING_GUIENGINE
+#ifdef PKG_USING_GUIENGINE
 
 
 #define RT_HW_LCD_WIDTH                ((uint16_t)320)     /* LCD PIXEL WIDTH            */
@@ -205,7 +205,7 @@ static void tli_config(void)
     tli_layer_init(LAYER0, &tli_layer_init_struct);
 }
 
-static rt_err_t rt_lcd_control(rt_device_t dev, rt_uint8_t cmd, void *args)
+static rt_err_t rt_lcd_control(rt_device_t dev, int cmd, void *args)
 {
     switch (cmd)
     {

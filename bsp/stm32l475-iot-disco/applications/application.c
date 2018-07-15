@@ -20,7 +20,7 @@
 #include "time.h"
 #ifdef RT_USING_DFS
 /* dfs init */
-#include <dfs_init.h>
+#include <dfs.h>
 /* dfs filesystem:ELM filesystem init */
 #include <dfs_elm.h>
 /* dfs Filesystem APIs */
@@ -39,7 +39,7 @@
 #include <gdb_stub.h>
 #endif
 
-#ifdef RT_USING_GUIENGINE
+#ifdef PKG_USING_GUIENGINE
 #include "rtgui_demo.h"
 #include <rtgui/driver.h>
 #endif

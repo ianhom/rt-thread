@@ -173,7 +173,7 @@ static rt_err_t sst25vfxx_flash_close(rt_device_t dev)
     return RT_EOK;
 }
 
-static rt_err_t sst25vfxx_flash_control(rt_device_t dev, rt_uint8_t cmd, void *args)
+static rt_err_t sst25vfxx_flash_control(rt_device_t dev, int cmd, void *args)
 {
     struct spi_flash_sst25vfxx * spi_flash;
 
@@ -253,6 +253,18 @@ static rt_size_t sst25vfxx_flash_write(rt_device_t dev, rt_off_t pos, const void
 
     return size;
 }
+
+#ifdef RT_USING_DEVICE_OPS
+const static struct rt_device_ops sst25vfxx_device_ops =
+{
+    sst25vfxx_flash_init,
+    sst25vfxx_flash_open,
+    sst25vfxx_flash_close,
+    sst25vfxx_flash_read,
+    sst25vfxx_flash_write,
+    sst25vfxx_flash_control
+};
+#endif
 
 rt_err_t sst25vfxx_init(const char * flash_device_name, const char * spi_device_name)
 {
@@ -340,12 +352,16 @@ rt_err_t sst25vfxx_init(const char * flash_device_name, const char * spi_device_
 
     /* register device */
     spi_flash->flash_device.type    = RT_Device_Class_Block;
+#ifdef RT_USING_DEVICE_OPS
+    spi_flash->flash_device.ops     = &sst25vfxx_device_ops;
+#else
     spi_flash->flash_device.init    = sst25vfxx_flash_init;
     spi_flash->flash_device.open    = sst25vfxx_flash_open;
     spi_flash->flash_device.close   = sst25vfxx_flash_close;
     spi_flash->flash_device.read    = sst25vfxx_flash_read;
     spi_flash->flash_device.write   = sst25vfxx_flash_write;
     spi_flash->flash_device.control = sst25vfxx_flash_control;
+#endif
     /* no private */
     spi_flash->flash_device.user_data = RT_NULL;
 

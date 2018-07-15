@@ -10,7 +10,7 @@ DMA_HandleTypeDef SDTxDMAHandler,SDRxDMAHandler;    //SD卡DMA发送和接收句柄
 
 //SD卡初始化
 //返回值:0 初始化正确；其他值，初始化错误
- rt_uint8_t SD_Init(void)
+rt_uint8_t SD_Init(void)
 {
     rt_uint8_t SD_Error;
     
@@ -21,7 +21,7 @@ DMA_HandleTypeDef SDTxDMAHandler,SDRxDMAHandler;    //SD卡DMA发送和接收句柄
     SDCARD_Handler.Init.ClockPowerSave=SDIO_CLOCK_POWER_SAVE_DISABLE;    //空闲时不关闭时钟电源
     SDCARD_Handler.Init.BusWide=SDIO_BUS_WIDE_1B;                        //1位数据线
     SDCARD_Handler.Init.HardwareFlowControl=SDIO_HARDWARE_FLOW_CONTROL_DISABLE;//关闭硬件流控
-    SDCARD_Handler.Init.ClockDiv=SDIO_TRANSFER_CLK_DIV;            //SD传输时钟频率最大25MHZ
+    SDCARD_Handler.Init.ClockDiv=SDIO_INIT_CLK_DIV;                 //初始化时钟为400KHZ
     
     SD_Error=HAL_SD_Init(&SDCARD_Handler,&SDCardInfo);
     if(SD_Error!=SD_OK) return 1;
@@ -320,7 +320,7 @@ static rt_size_t rt_sdcard_write (rt_device_t dev, rt_off_t pos, const void* buf
 	return 0;
 }
 
-static rt_err_t rt_sdcard_control(rt_device_t dev, rt_uint8_t cmd, void *args)
+static rt_err_t rt_sdcard_control(rt_device_t dev, int cmd, void *args)
 {
     RT_ASSERT(dev != RT_NULL);
 

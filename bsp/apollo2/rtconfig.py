@@ -18,9 +18,9 @@ elif CROSS_TOOL == 'keil':
 	PLATFORM 	= 'armcc'
 	EXEC_PATH 	= 'C:/Keil_v5'
 elif CROSS_TOOL == 'iar':
-    print '================ERROR============================'
-    print 'Not support iar yet!'
-    print '================================================='
+    print('================ERROR============================')
+    print('Not support iar yet!')
+    print('=================================================')
     exit(0)
 
 if os.getenv('RTT_EXEC_PATH'):
@@ -35,7 +35,7 @@ if PLATFORM == 'gcc':
     AS = PREFIX + 'gcc'
     AR = PREFIX + 'ar'
     LINK = PREFIX + 'gcc'
-    TARGET_EXT = 'axf'
+    TARGET_EXT = 'elf'
     SIZE = PREFIX + 'size'
     OBJDUMP = PREFIX + 'objdump'
     OBJCPY = PREFIX + 'objcopy'
@@ -43,7 +43,7 @@ if PLATFORM == 'gcc':
     DEVICE = ' -mcpu=cortex-m4 -mthumb -ffunction-sections -fdata-sections'
     CFLAGS = DEVICE
     AFLAGS = ' -c' + DEVICE + ' -x assembler-with-cpp'
-    LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=rtthread-nrf52832.map,-cref,-u,Reset_Handler -T nrf52_xxaa.ld'
+    LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=rtthread-apollo2.map,-cref,-u,Reset_Handler -T'
 
     CPATH = ''
     LPATH = ''
@@ -67,7 +67,7 @@ elif PLATFORM == 'armcc':
     DEVICE = ' --device DARMSTM'
     CFLAGS = DEVICE + ' --apcs=interwork'
     AFLAGS = DEVICE
-    LFLAGS = DEVICE + ' --info sizes --info totals --info unused --info veneers --list rtthread-nrf52832.map --scatter rtthread-nrf52832.sct'
+    LFLAGS = DEVICE + ' --info sizes --info totals --info unused --info veneers --list rtthread-apollo2.map --scatter rtthread-apollo2.sct'
 
     CFLAGS += ' --c99'
     CFLAGS += ' -I' + EXEC_PATH + '/ARM/RV31/INC'

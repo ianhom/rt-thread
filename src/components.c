@@ -1,21 +1,7 @@
 /*
- * File      : init.c
- * This file is part of RT-Thread RTOS
- * COPYRIGHT (C) 2012 - 2015, RT-Thread Development Team
+ * Copyright (c) 2006-2018, RT-Thread Development Team
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author       Notes
@@ -36,6 +22,9 @@
 #ifdef RT_USING_USER_MAIN
 #ifndef RT_MAIN_THREAD_STACK_SIZE
 #define RT_MAIN_THREAD_STACK_SIZE     2048
+#endif
+#ifndef RT_MAIN_THREAD_PRIORITY
+#define RT_MAIN_THREAD_PRIORITY       (RT_THREAD_PRIORITY_MAX / 3)
 #endif
 #endif
 
@@ -143,7 +132,7 @@ void rt_application_init(void);
 void rt_hw_board_init(void);
 int rtthread_startup(void);
 
-#if defined (__CC_ARM)
+#if defined(__CC_ARM) || defined(__CLANG_ARM)
 extern int $Super$$main(void);
 /* re-define main function */
 int $Sub$$main(void)
@@ -192,7 +181,7 @@ void main_thread_entry(void *parameter)
     rt_components_init();
 
     /* invoke system main function */
-#if defined (__CC_ARM)
+#if defined(__CC_ARM) || defined(__CLANG_ARM)
     $Super$$main(); /* for ARMCC. */
 #elif defined(__ICCARM__) || defined(__GNUC__)
     main();
@@ -205,14 +194,14 @@ void rt_application_init(void)
 
 #ifdef RT_USING_HEAP
     tid = rt_thread_create("main", main_thread_entry, RT_NULL,
-                           RT_MAIN_THREAD_STACK_SIZE, RT_THREAD_PRIORITY_MAX / 3, 20);
+                           RT_MAIN_THREAD_STACK_SIZE, RT_MAIN_THREAD_PRIORITY, 20);
     RT_ASSERT(tid != RT_NULL);
 #else
     rt_err_t result;
 
     tid = &main_thread;
     result = rt_thread_init(tid, "main", main_thread_entry, RT_NULL,
-                            main_stack, sizeof(main_stack), RT_THREAD_PRIORITY_MAX / 3, 20);
+                            main_stack, sizeof(main_stack), RT_MAIN_THREAD_PRIORITY, 20);
     RT_ASSERT(result == RT_EOK);
 	
     /* if not define RT_USING_HEAP, using to eliminate the warning */

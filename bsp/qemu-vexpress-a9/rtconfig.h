@@ -11,16 +11,14 @@
 #define RT_THREAD_PRIORITY_32
 #define RT_THREAD_PRIORITY_MAX 32
 #define RT_TICK_PER_SECOND 100
-#define RT_DEBUG
 #define RT_USING_OVERFLOW_CHECK
-#define RT_DEBUG_INIT 0
-#define RT_DEBUG_THREAD 0
 #define RT_USING_HOOK
 #define RT_IDEL_HOOK_LIST_SIZE 4
-#define IDLE_THREAD_STACK_SIZE 512
+#define IDLE_THREAD_STACK_SIZE 1024
 #define RT_USING_TIMER_SOFT
 #define RT_TIMER_THREAD_PRIO 4
 #define RT_TIMER_THREAD_STACK_SIZE 1024
+#define RT_DEBUG
 
 /* Inter-Thread communication */
 
@@ -55,6 +53,7 @@
 #define RT_USING_COMPONENTS_INIT
 #define RT_USING_USER_MAIN
 #define RT_MAIN_THREAD_STACK_SIZE 2048
+#define RT_MAIN_THREAD_PRIORITY 10
 
 /* C++ features */
 
@@ -81,7 +80,7 @@
 #define DFS_USING_WORKDIR
 #define DFS_FILESYSTEMS_MAX 2
 #define DFS_FILESYSTEM_TYPES_MAX 2
-#define DFS_FD_MAX 4
+#define DFS_FD_MAX 16
 #define RT_USING_DFS_ELMFAT
 
 /* elm-chan's FatFs, Generic FAT Filesystem Module */
@@ -95,7 +94,6 @@
 #define RT_DFS_ELM_MAX_SECTOR_SIZE 4096
 #define RT_DFS_ELM_REENTRANT
 #define RT_USING_DFS_DEVFS
-#define RT_USING_DFS_NET
 #define RT_USING_DFS_ROMFS
 #define RT_USING_DFS_RAMFS
 
@@ -111,6 +109,7 @@
 #define RT_USING_MTD_NAND
 #define RT_MTD_NAND_DEBUG
 #define RT_USING_RTC
+#define RT_USING_SOFT_RTC
 #define RT_USING_SDIO
 #define RT_SDIO_STACK_SIZE 512
 #define RT_SDIO_THREAD_PRIORITY 15
@@ -124,6 +123,9 @@
 #define RT_SFUD_USING_FLASH_INFO_TABLE
 #define RT_USING_WDT
 
+/* Using WiFi */
+
+
 /* Using USB */
 
 
@@ -136,7 +138,17 @@
 #define RT_USING_POSIX_TERMIOS
 #define RT_USING_POSIX_AIO
 
-/* Network stack */
+/* Network */
+
+/* Socket abstraction layer */
+
+#define RT_USING_SAL
+
+/* protocol stack implement */
+
+#define SAL_USING_LWIP
+#define SAL_USING_POSIX
+#define SAL_PROTO_FAMILIES_NUM 4
 
 /* light weight TCP/IP stack */
 
@@ -181,6 +193,9 @@
 /* Modbus master and slave stack */
 
 
+/* AT commands */
+
+
 /* VBUS(Virtual Software BUS) */
 
 
@@ -201,6 +216,9 @@
 
 
 /* Wiced WiFi */
+
+
+/* IoT Cloud */
 
 
 /* security packages */
@@ -225,6 +243,8 @@
 
 
 /* sample package */
+
+/* samples: kernel and components samples */
 
 
 /* example package: hello */

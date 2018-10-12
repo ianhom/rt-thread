@@ -37,7 +37,11 @@
 #include "dfs_posix.h"
 #endif
 
+#ifdef __CLANG_ARM
+__asm(".global __use_no_semihosting\n\t");
+#else
 #pragma import(__use_no_semihosting_swi)
+#endif
 
 /* Standard IO device handles. */
 #define STDIN       0
@@ -189,7 +193,7 @@ int _sys_write(FILEHANDLE fh, const unsigned char *buf, unsigned len, int mode)
 
     if ((fh == STDOUT) || (fh == STDERR))
     {
-#ifndef RT_USING_CONSOLE
+#if !defined(RT_USING_CONSOLE) || !defined(RT_USING_DEVICE)
         return 0;
 #else
 #ifdef RT_USING_POSIX
@@ -249,7 +253,7 @@ int _sys_tmpnam(char *name, int fileno, unsigned maxlength)
 char *_sys_command_string(char *cmd, int len)
 {
     /* no support */
-    return cmd;
+    return RT_NULL;
 }
 
 /* This function writes a character to the console. */
@@ -309,17 +313,18 @@ int system(const char *string)
 
 int fputc(int c, FILE *f) 
 {
-    char ch = c;
+    char ch[2] = {0};
 
-    rt_kprintf(&ch);
+    ch[0] = c;
+    rt_kprintf(&ch[0]);
     return 1;
 }
 
 int fgetc(FILE *f) 
 {
+#ifdef RT_USING_POSIX
     char ch;
 
-#ifdef RT_USING_POSIX
     if (libc_stdio_read(&ch, 1) == 1)
         return ch;
 #endif

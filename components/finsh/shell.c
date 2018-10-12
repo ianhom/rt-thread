@@ -55,7 +55,9 @@
 static struct rt_thread finsh_thread;
 ALIGN(RT_ALIGN_SIZE)
 static char finsh_thread_stack[FINSH_THREAD_STACK_SIZE];
+struct finsh_shell _shell;
 #endif
+
 struct finsh_shell *shell;
 static char *finsh_prompt_custom = RT_NULL;
 
@@ -473,9 +475,6 @@ static void shell_push_history(struct finsh_shell *shell)
 }
 #endif
 
-#ifndef RT_USING_HEAP
-struct finsh_shell _shell;
-#endif
 void finsh_thread_entry(void *parameter)
 {
     char ch;
@@ -791,14 +790,8 @@ int finsh_system_init(void)
     rt_err_t result = RT_EOK;
     rt_thread_t tid;
 
-    if(shell)
-    {
-        rt_kprintf("finsh shell already init.\n");
-        return RT_EOK;
-    }
-
 #ifdef FINSH_USING_SYMTAB
-#ifdef __CC_ARM                 /* ARM C Compiler */
+#if defined(__CC_ARM) || defined(__CLANG_ARM)          /* ARM C Compiler */
     extern const int FSymTab$$Base;
     extern const int FSymTab$$Limit;
     extern const int VSymTab$$Base;
@@ -825,6 +818,12 @@ int finsh_system_init(void)
     finsh_system_var_init(&__vsymtab_start, &__vsymtab_end);
 #elif defined(_MSC_VER)
     unsigned int *ptr_begin, *ptr_end;
+		
+    if(shell)
+    {
+        rt_kprintf("finsh shell already init.\n");
+        return RT_EOK;
+    }
 
     ptr_begin = (unsigned int *)&__fsym_begin;
     ptr_begin += (sizeof(struct finsh_syscall) / sizeof(unsigned int));
@@ -867,4 +866,3 @@ int finsh_system_init(void)
     return 0;
 }
 INIT_APP_EXPORT(finsh_system_init);
-
